@@ -1,5 +1,86 @@
 # astro
 
+## 5.0.0-alpha.7
+
+### Major Changes
+
+- [#11908](https://github.com/withastro/astro/pull/11908) [`518433e`](https://github.com/withastro/astro/commit/518433e433fe69ee3bbbb1f069181cd9eb69ec9a) Thanks [@Princesseuh](https://github.com/Princesseuh)! - The `image.endpoint` config now allow customizing the route of the image endpoint in addition to the entrypoint. This can be useful in niche situations where the default route `/_image` conflicts with an existing route or your local server setup.
+
+  ```js
+  import { defineConfig } from 'astro/config';
+
+  defineConfig({
+    image: {
+      endpoint: {
+        route: '/image',
+        entrypoint: './src/image_endpoint.ts',
+      },
+    },
+  });
+  ```
+
+### Patch Changes
+
+- [#11939](https://github.com/withastro/astro/pull/11939) [`7b09c62`](https://github.com/withastro/astro/commit/7b09c62b565cd7b50c35fb68d390729f936a43fb) Thanks [@bholmesdev](https://github.com/bholmesdev)! - Adds support for Zod discriminated unions on Action form inputs. This allows forms with different inputs to be submitted to the same action, using a given input to decide which object should be used for validation.
+
+  This example accepts either a `create` or `update` form submission, and uses the `type` field to determine which object to validate against.
+
+  ```ts
+  import { defineAction } from 'astro:actions';
+  import { z } from 'astro:schema';
+
+  export const server = {
+    changeUser: defineAction({
+      accept: 'form',
+      input: z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('create'),
+          name: z.string(),
+          email: z.string().email(),
+        }),
+        z.object({
+          type: z.literal('update'),
+          id: z.number(),
+          name: z.string(),
+          email: z.string().email(),
+        }),
+      ]),
+      async handler(input) {
+        if (input.type === 'create') {
+          // input is { type: 'create', name: string, email: string }
+        } else {
+          // input is { type: 'update', id: number, name: string, email: string }
+        }
+      },
+    }),
+  };
+  ```
+
+  The corresponding `create` and `update` forms may look like this:
+
+  ```astro
+  ---
+  import { actions } from 'astro:actions';
+  ---
+
+  <!--Create-->
+  <form action={actions.changeUser} method="POST">
+    <input type="hidden" name="type" value="create" />
+    <input type="text" name="name" required />
+    <input type="email" name="email" required />
+    <button type="submit">Create User</button>
+  </form>
+
+  <!--Update-->
+  <form action={actions.changeUser} method="POST">
+    <input type="hidden" name="type" value="update" />
+    <input type="hidden" name="id" value="user-123" />
+    <input type="text" name="name" required />
+    <input type="email" name="email" required />
+    <button type="submit">Update User</button>
+  </form>
+  ```
+
 ## 5.0.0-alpha.6
 
 ### Major Changes
